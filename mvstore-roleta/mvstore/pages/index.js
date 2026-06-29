@@ -71,6 +71,8 @@ export default function Home() {
     const prize = spinWheel(prizes)
     lastPrizeRef.current = prize
 
+    console.log('SORTEADO:', prize.name, 'sort_order:', prize.sort_order, 'id:', prize.id)
+
     if (window.__spinWheel) {
       window.__spinWheel(prize)
     }
