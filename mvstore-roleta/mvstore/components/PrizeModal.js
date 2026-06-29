@@ -3,12 +3,10 @@ import { X } from 'lucide-react'
 
 export default function PrizeModal({ prize, onClose, spinsLeft }) {
   const isWin = !prize?.is_retry
-  const audioRef = useRef(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        // Trigger confetti for wins
         if (isWin) {
           import('canvas-confetti').then(confetti => {
             const colors = ['#00F5FF', '#67E8F9', '#ffffff', '#0891B2']
@@ -48,9 +46,7 @@ export default function PrizeModal({ prize, onClose, spinsLeft }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
       <div
         className={`relative w-full max-w-sm rounded-2xl overflow-hidden ${
-          isWin
-            ? 'border border-cyan-400/50'
-            : 'border border-white/10'
+          isWin ? 'border border-cyan-400/50' : 'border border-white/10'
         }`}
         style={{
           background: isWin
@@ -61,7 +57,6 @@ export default function PrizeModal({ prize, onClose, spinsLeft }) {
             : '0 0 40px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Animated border for wins */}
         {isWin && (
           <div
             className="absolute inset-0 rounded-2xl opacity-50"
@@ -74,7 +69,6 @@ export default function PrizeModal({ prize, onClose, spinsLeft }) {
           />
         )}
 
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors z-10"
@@ -85,43 +79,25 @@ export default function PrizeModal({ prize, onClose, spinsLeft }) {
         <div className="p-8 text-center">
           {isWin ? (
             <>
-              {/* Win header */}
               <div className="mb-4">
                 <div className="text-sm font-semibold tracking-widest text-cyan-400 mb-2 uppercase">
                   🏆 Parabéns! Você ganhou!
                 </div>
-                <div
-                  className="text-7xl mb-4"
-                  style={{ animation: 'float 2s ease-in-out infinite' }}
-                >
+                <div className="text-7xl mb-4" style={{ animation: 'float 2s ease-in-out infinite' }}>
                   {prize.emoji}
                 </div>
               </div>
 
-              <div
-                className="text-3xl font-black mb-2 shimmer-text"
-              >
+              <div className="text-3xl font-black mb-2 shimmer-text">
                 {prize.name}
               </div>
 
               <p className="text-white/60 text-sm mb-6">
                 Entre em contato com o suporte para resgatar seu prêmio.
               </p>
-
-              {/* Contact button */}
-              <a
-                href="https://wa.me/5500000000000?text=Olá!%20Ganhei%20um%20prêmio%20na%20roleta%20MV%20Store:%20"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full py-3 rounded-xl text-sm font-bold mb-3 btn-cyan"
-                style={{ textDecoration: 'none', color: '#020B0F' }}
-              >
-                📲 Resgatar via WhatsApp
-              </a>
             </>
           ) : (
             <>
-              {/* Retry */}
               <div className="text-6xl mb-4">🔄</div>
               <div className="text-2xl font-bold text-white/80 mb-2">
                 Não foi dessa vez...
@@ -132,15 +108,12 @@ export default function PrizeModal({ prize, onClose, spinsLeft }) {
             </>
           )}
 
-          {/* Spins remaining */}
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <div
-              className={`px-4 py-2 rounded-full ${
-                spinsLeft > 0
-                  ? 'bg-cyan-400/10 border border-cyan-400/30 text-cyan-400'
-                  : 'bg-red-400/10 border border-red-400/30 text-red-400'
-              }`}
-            >
+          <div className="flex items-center justify-center gap-2 text-sm mb-4">
+            <div className={`px-4 py-2 rounded-full ${
+              spinsLeft > 0
+                ? 'bg-cyan-400/10 border border-cyan-400/30 text-cyan-400'
+                : 'bg-red-400/10 border border-red-400/30 text-red-400'
+            }`}>
               {spinsLeft > 0
                 ? `⚡ ${spinsLeft} giro${spinsLeft !== 1 ? 's' : ''} restante${spinsLeft !== 1 ? 's' : ''}`
                 : '❌ Sem giros restantes'}
@@ -149,7 +122,7 @@ export default function PrizeModal({ prize, onClose, spinsLeft }) {
 
           <button
             onClick={onClose}
-            className="mt-4 w-full py-3 rounded-xl text-sm font-semibold border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-all"
+            className="w-full py-3 rounded-xl text-sm font-semibold border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-all"
           >
             {spinsLeft > 0 ? 'Girar novamente' : 'Fechar'}
           </button>
