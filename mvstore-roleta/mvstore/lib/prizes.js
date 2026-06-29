@@ -101,7 +101,9 @@ export const DEFAULT_PRIZES = [
 ]
 
 export function getActivePrizes(prizes) {
-  return prizes.filter(p => p.active)
+  return prizes
+    .filter(p => p.active)
+    .sort((a, b) => a.sort_order - b.sort_order)
 }
 
 export function spinWheel(prizes) {
@@ -116,7 +118,6 @@ export function spinWheel(prizes) {
       return prize
     }
   }
-
   return activePrizes[activePrizes.length - 1]
 }
 
