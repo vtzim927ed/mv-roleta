@@ -116,9 +116,7 @@ export function spinWheel(prizes) {
   let cumulative = 0
   for (const prize of activePrizes) {
     cumulative += parseFloat(prize.weight) || parseFloat(prize.percentage) || 0
-    if (random <= cumulative) {
-      return prize
-    }
+    if (random <= cumulative) return prize
   }
   return activePrizes[activePrizes.length - 1]
 }
@@ -147,7 +145,7 @@ export function getRotationForPrize(prize, segments, currentRotation) {
 
   if (!segment) return currentRotation
 
-  const targetAngle = (segment.midAngle + 270 + 280) % 360
+  const targetAngle = (segment.midAngle + 270 + 320) % 360
   const minRotations = (5 + Math.random() * 3) * 360
   const currentPos = currentRotation % 360
 
