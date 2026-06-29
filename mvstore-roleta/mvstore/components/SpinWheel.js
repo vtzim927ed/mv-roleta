@@ -147,14 +147,7 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
           rotationRef.current = targetRotation
           spinningRef.current = false
           setSpinning(false)
-
-          // Descobre qual segmento está na seta (topo = 0 graus)
-          const finalRot = rotationRef.current % 360
-          const normalized = (360 - finalRot % 360) % 360
-          const wonSegment = segs.find(s => normalized >= s.startAngle && normalized < s.endAngle)
-            || segs[segs.length - 1]
-
-          onSpinCompleteRef.current(wonSegment)
+          onSpinCompleteRef.current(targetPrize)
         }
       }
 
