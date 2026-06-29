@@ -4,7 +4,8 @@ export const DEFAULT_PRIZES = [
     id: 1,
     name: 'Pix R$5',
     emoji: '💵',
-    percentage: 6.8,
+    percentage: 11.11,
+    weight: 6.8,
     color: '#00C896',
     active: true,
     sort_order: 1,
@@ -14,7 +15,8 @@ export const DEFAULT_PRIZES = [
     id: 2,
     name: 'Pix R$15',
     emoji: '💵',
-    percentage: 3.4,
+    percentage: 11.11,
+    weight: 3.4,
     color: '#00A878',
     active: true,
     sort_order: 2,
@@ -24,7 +26,8 @@ export const DEFAULT_PRIZES = [
     id: 3,
     name: 'Pix R$20',
     emoji: '💵',
-    percentage: 1.7,
+    percentage: 11.11,
+    weight: 1.7,
     color: '#008F65',
     active: true,
     sort_order: 3,
@@ -34,7 +37,8 @@ export const DEFAULT_PRIZES = [
     id: 4,
     name: 'Conta Nitrada',
     emoji: '🔥',
-    percentage: 10.2,
+    percentage: 11.11,
+    weight: 10.2,
     color: '#FF6B35',
     active: true,
     sort_order: 4,
@@ -44,7 +48,8 @@ export const DEFAULT_PRIZES = [
     id: 5,
     name: 'Decoração R$15,99',
     emoji: '🎨',
-    percentage: 8.2,
+    percentage: 11.11,
+    weight: 8.2,
     color: '#9B59B6',
     active: true,
     sort_order: 5,
@@ -54,7 +59,8 @@ export const DEFAULT_PRIZES = [
     id: 6,
     name: '2 Impulsos',
     emoji: '🚀',
-    percentage: 8.2,
+    percentage: 11.11,
+    weight: 8.2,
     color: '#2980B9',
     active: true,
     sort_order: 6,
@@ -64,7 +70,8 @@ export const DEFAULT_PRIZES = [
     id: 7,
     name: '2 Impulsos',
     emoji: '🚀',
-    percentage: 10.2,
+    percentage: 11.11,
+    weight: 10.2,
     color: '#1A6FA8',
     active: true,
     sort_order: 7,
@@ -74,7 +81,8 @@ export const DEFAULT_PRIZES = [
     id: 8,
     name: 'Produto à escolha',
     emoji: '🎁',
-    percentage: 1.4,
+    percentage: 11.11,
+    weight: 1.4,
     color: '#F39C12',
     active: true,
     sort_order: 8,
@@ -84,7 +92,8 @@ export const DEFAULT_PRIZES = [
     id: 9,
     name: 'Tente novamente',
     emoji: '🔄',
-    percentage: 50.0,
+    percentage: 11.12,
+    weight: 50.0,
     color: '#2C3E50',
     active: true,
     sort_order: 9,
@@ -98,26 +107,24 @@ export function getActivePrizes(prizes) {
 
 export function spinWheel(prizes) {
   const activePrizes = getActivePrizes(prizes)
-  const totalPercentage = activePrizes.reduce((sum, p) => sum + p.percentage, 0)
-  const random = Math.random() * totalPercentage
-  
+  const totalWeight = activePrizes.reduce((sum, p) => sum + (p.weight ?? p.percentage), 0)
+  const random = Math.random() * totalWeight
+
   let cumulative = 0
   for (const prize of activePrizes) {
-    cumulative += prize.percentage
+    cumulative += p.weight ?? p.percentage
     if (random <= cumulative) {
       return prize
     }
   }
-  
-  // Fallback to last prize
+
   return activePrizes[activePrizes.length - 1]
 }
 
-// Calculate wheel segment angles
 export function calculateSegments(prizes) {
   const activePrizes = getActivePrizes(prizes)
   const totalPercentage = activePrizes.reduce((sum, p) => sum + p.percentage, 0)
-  
+
   let currentAngle = 0
   return activePrizes.map(prize => {
     const angle = (prize.percentage / totalPercentage) * 360
@@ -132,24 +139,16 @@ export function calculateSegments(prizes) {
   })
 }
 
-// Find the angle to rotate to land on a specific prize
 export function getRotationForPrize(prize, segments, currentRotation) {
   const segment = segments.find(s => s.id === prize.id)
   if (!segment) return currentRotation
-  
-  // We want the midpoint of the winning segment to be at the top (pointer)
-  // The pointer is at 0 degrees (top), wheel rotates clockwise
+
   const targetAngle = segment.midAngle
-  
-  // Minimum rotations for dramatic effect (5-8 full spins)
   const minRotations = (5 + Math.random() * 3) * 360
-  
-  // Calculate how much to rotate
-  // Current position mod 360, then figure out additional rotation needed
   const currentPos = currentRotation % 360
   let additionalRotation = (360 - targetAngle - currentPos + 360) % 360
-  
+
   if (additionalRotation < 30) additionalRotation += 360
-  
+
   return currentRotation + minRotations + additionalRotation
 }
