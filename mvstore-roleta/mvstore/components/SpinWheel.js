@@ -3,13 +3,15 @@ import { calculateSegments, getRotationForPrize } from '../lib/prizes'
 
 export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, setSpinning }) {
   const canvasRef = useRef(null)
-  const [rotation, setRotation] = useState(0)
   const rotationRef = useRef(0)
   const animFrameRef = useRef(null)
+  const spinningRef = useRef(false)
 
   const segments = calculateSegments(prizes)
+  const segmentsRef = useRef(segments)
 
   useEffect(() => {
+    segmentsRef.current = calculateSegments(prizes)
     drawWheel(rotationRef.current)
   }, [prizes])
 
@@ -24,7 +26,6 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
 
     ctx.clearRect(0, 0, size, size)
 
-    // Draw outer glow ring
     const glowGrad = ctx.createRadialGradient(cx, cy, radius - 5, cx, cy, radius + 10)
     glowGrad.addColorStop(0, 'rgba(0, 245, 255, 0.8)')
     glowGrad.addColorStop(1, 'rgba(0, 245, 255, 0)')
@@ -34,31 +35,25 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
     ctx.lineWidth = 10
     ctx.stroke()
 
-    // Draw segments
     const rotRad = (currentRot * Math.PI) / 180
 
-    segments.forEach((seg, i) => {
+    segmentsRef.current.forEach((seg, i) => {
       const startRad = ((seg.startAngle - 90) * Math.PI) / 180 + rotRad
       const endRad = ((seg.endAngle - 90) * Math.PI) / 180 + rotRad
 
-      // Segment fill
       ctx.beginPath()
       ctx.moveTo(cx, cy)
       ctx.arc(cx, cy, radius - 2, startRad, endRad)
       ctx.closePath()
 
-      // Alternating darkness
-      const baseColor = seg.color
       const isEven = i % 2 === 0
-      ctx.fillStyle = isEven ? baseColor : darkenColor(baseColor, 25)
+      ctx.fillStyle = isEven ? seg.color : darkenColor(seg.color, 25)
       ctx.fill()
 
-      // Segment border
       ctx.strokeStyle = 'rgba(0, 245, 255, 0.4)'
       ctx.lineWidth = 1.5
       ctx.stroke()
 
-      // Text
       const midRad = ((seg.midAngle - 90) * Math.PI) / 180 + rotRad
       const textRadius = radius * 0.65
       const textX = cx + Math.cos(midRad) * textRadius
@@ -68,24 +63,21 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
       ctx.translate(textX, textY)
       ctx.rotate(midRad + Math.PI / 2)
 
-      // Emoji
       ctx.font = `${Math.max(12, size * 0.042)}px Arial`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(seg.emoji, 0, -12)
 
-      // Label
       ctx.font = `bold ${Math.max(9, size * 0.028)}px Arial`
       ctx.fillStyle = '#ffffff'
       ctx.shadowColor = 'rgba(0,0,0,0.8)'
       ctx.shadowBlur = 3
-      
+
       const label = seg.name.length > 14 ? seg.name.substring(0, 12) + '…' : seg.name
       ctx.fillText(label, 0, 6)
       ctx.restore()
     })
 
-    // Center circle
     const centerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 35)
     centerGrad.addColorStop(0, '#00F5FF')
     centerGrad.addColorStop(0.4, '#0891B2')
@@ -102,7 +94,6 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
     ctx.lineWidth = 2
     ctx.stroke()
 
-    // MV logo text
     ctx.font = 'bold 16px Arial'
     ctx.fillStyle = '#020B0F'
     ctx.textAlign = 'center'
@@ -122,17 +113,18 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
   }
 
   function startSpin(targetPrize) {
-    if (spinning || disabled) return
+    if (spinningRef.current || disabled) return
 
+    spinningRef.current = true
     setSpinning(true)
-    const targetRotation = getRotationForPrize(targetPrize, segments, rotationRef.current)
+
+    const targetRotation = getRotationForPrize(targetPrize, segmentsRef.current, rotationRef.current)
     const startRotation = rotationRef.current
     const totalRotation = targetRotation - startRotation
-    const duration = 5000 + Math.random() * 2000 // 5-7 seconds
+    const duration = 5000 + Math.random() * 2000
     const startTime = performance.now()
 
     function easeOut(t) {
-      // Custom ease-out with slight bounce
       return 1 - Math.pow(1 - t, 4)
     }
 
@@ -148,7 +140,7 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
         animFrameRef.current = requestAnimationFrame(animate)
       } else {
         rotationRef.current = targetRotation
-        setRotation(targetRotation)
+        spinningRef.current = false
         setSpinning(false)
         onSpinComplete(targetPrize)
       }
@@ -157,7 +149,6 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
     animFrameRef.current = requestAnimationFrame(animate)
   }
 
-  // Expose startSpin via ref trick
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.__spinWheel = startSpin
@@ -165,11 +156,14 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
     }
-  }, [spinning, segments])
+  }, [])
+
+  useEffect(() => {
+    drawWheel(rotationRef.current)
+  }, [])
 
   return (
     <div className="wheel-container flex items-center justify-center relative">
-      {/* Pointer */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 wheel-pointer" style={{ marginTop: '-2px' }}>
         <svg width="32" height="48" viewBox="0 0 32 48">
           <defs>
@@ -185,9 +179,9 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
               </feMerge>
             </filter>
           </defs>
-          <polygon 
-            points="16,2 30,46 2,46" 
-            fill="url(#pointerGrad)" 
+          <polygon
+            points="16,2 30,46 2,46"
+            fill="url(#pointerGrad)"
             filter="url(#pointerGlow)"
             stroke="rgba(0,245,255,0.5)"
             strokeWidth="1"
@@ -196,7 +190,6 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
         </svg>
       </div>
 
-      {/* Outer decorative ring */}
       <div className="absolute inset-0 rounded-full" style={{
         background: 'conic-gradient(from 0deg, transparent 0%, rgba(0,245,255,0.1) 50%, transparent 100%)',
         animation: 'spin 8s linear infinite',
