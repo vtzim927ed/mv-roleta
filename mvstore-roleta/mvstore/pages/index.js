@@ -22,7 +22,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notification, setNotification] = useState(null)
-  const pendingPrizeRef = useRef(null)
 
   useEffect(() => {
     loadPrizes()
@@ -69,7 +68,6 @@ export default function Home() {
     if (spinning || !client || client.spins_available <= 0) return
 
     const prize = spinWheel(prizes)
-    pendingPrizeRef.current = prize
 
     if (window.__spinWheel) {
       window.__spinWheel(prize)
@@ -82,9 +80,7 @@ export default function Home() {
   }
 
   async function handleSpinComplete(animPrize) {
-    // Usa o prêmio sorteado (pendingPrizeRef) que foi passado para a animação
-    const prize = pendingPrizeRef.current || animPrize
-    pendingPrizeRef.current = null
+    const prize = animPrize
 
     try {
       await saveSpinResult(client.id, client.name, prize.id, prize.name)
