@@ -193,7 +193,7 @@ export default function Home() {
                         type="text"
                         value={code}
                         onChange={e => setCode(e.target.value.toUpperCase())}
-                        placeholder="Ex: MV2024ABC"
+                        placeholder="Ex: MV123ABC"
                         className="input-cyber w-full px-4 py-3.5 text-lg font-mono tracking-widest text-center"
                         maxLength={20}
                         autoFocus
@@ -341,7 +341,7 @@ export default function Home() {
 
           {/* Footer */}
           <footer className="px-4 py-3 text-center border-t border-white/5">
-            <p className="text-white/20 text-xs">© 2024 MV Store · Todos os direitos reservados</p>
+            <p className="text-white/20 text-xs">© MV Store · Todos os direitos reservados</p>
           </footer>
         </div>
 
