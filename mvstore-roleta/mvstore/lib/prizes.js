@@ -108,12 +108,14 @@ export function getActivePrizes(prizes) {
 
 export function spinWheel(prizes) {
   const activePrizes = getActivePrizes(prizes)
-  const totalWeight = activePrizes.reduce((sum, prize) => sum + (prize.weight ?? prize.percentage), 0)
+  const totalWeight = activePrizes.reduce((sum, prize) => {
+    return sum + (parseFloat(prize.weight) || parseFloat(prize.percentage) || 0)
+  }, 0)
   const random = Math.random() * totalWeight
 
   let cumulative = 0
   for (const prize of activePrizes) {
-    cumulative += prize.weight ?? prize.percentage
+    cumulative += parseFloat(prize.weight) || parseFloat(prize.percentage) || 0
     if (random <= cumulative) {
       return prize
     }
