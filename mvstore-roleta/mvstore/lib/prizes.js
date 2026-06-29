@@ -147,7 +147,7 @@ export function getRotationForPrize(prize, segments, currentRotation) {
 
   if (!segment) return currentRotation
 
-  const targetAngle = (segment.midAngle + 270 + 120) % 360
+  const targetAngle = (segment.midAngle + 270 + 280) % 360
   const minRotations = (5 + Math.random() * 3) * 360
   const currentPos = currentRotation % 360
 
