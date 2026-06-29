@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { calculateSegments, getRotationForPrize } from '../lib/prizes'
 
 export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, setSpinning }) {
@@ -6,9 +6,12 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
   const rotationRef = useRef(0)
   const animFrameRef = useRef(null)
   const spinningRef = useRef(false)
+  const segmentsRef = useRef([])
+  const onSpinCompleteRef = useRef(onSpinComplete)
+  const disabledRef = useRef(disabled)
 
-  const segments = calculateSegments(prizes)
-  const segmentsRef = useRef(segments)
+  useEffect(() => { onSpinCompleteRef.current = onSpinComplete }, [onSpinComplete])
+  useEffect(() => { disabledRef.current = disabled }, [disabled])
 
   useEffect(() => {
     segmentsRef.current = calculateSegments(prizes)
@@ -112,54 +115,57 @@ export default function SpinWheel({ prizes, onSpinComplete, disabled, spinning, 
     return `rgb(${r},${g},${b})`
   }
 
-  function startSpin(targetPrize) {
-    if (spinningRef.current || disabled) return
-
-    spinningRef.current = true
-    setSpinning(true)
-
-    const targetRotation = getRotationForPrize(targetPrize, segmentsRef.current, rotationRef.current)
-    const startRotation = rotationRef.current
-    const totalRotation = targetRotation - startRotation
-    const duration = 5000 + Math.random() * 2000
-    const startTime = performance.now()
-
-    function easeOut(t) {
-      return 1 - Math.pow(1 - t, 4)
-    }
-
-    function animate(now) {
-      const elapsed = now - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const easedProgress = easeOut(progress)
-
-      rotationRef.current = startRotation + totalRotation * easedProgress
-      drawWheel(rotationRef.current)
-
-      if (progress < 1) {
-        animFrameRef.current = requestAnimationFrame(animate)
-      } else {
-        rotationRef.current = targetRotation
-        spinningRef.current = false
-        setSpinning(false)
-        onSpinComplete(targetPrize)
-      }
-    }
-
-    animFrameRef.current = requestAnimationFrame(animate)
-  }
-
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.__spinWheel = startSpin
+    function startSpin(targetPrize) {
+      if (spinningRef.current || disabledRef.current) return
+
+      spinningRef.current = true
+      setSpinning(true)
+
+      const segs = segmentsRef.current
+      const targetRotation = getRotationForPrize(targetPrize, segs, rotationRef.current)
+      const startRotation = rotationRef.current
+      const totalRotation = targetRotation - startRotation
+      const duration = 5000 + Math.random() * 2000
+      const startTime = performance.now()
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 4)
+      }
+
+      function animate(now) {
+        const elapsed = now - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        const easedProgress = easeOut(progress)
+
+        rotationRef.current = startRotation + totalRotation * easedProgress
+        drawWheel(rotationRef.current)
+
+        if (progress < 1) {
+          animFrameRef.current = requestAnimationFrame(animate)
+        } else {
+          rotationRef.current = targetRotation
+          spinningRef.current = false
+          setSpinning(false)
+
+          // Descobre qual segmento está na seta (topo = 0 graus)
+          const finalRot = rotationRef.current % 360
+          const normalized = (360 - finalRot % 360) % 360
+          const wonSegment = segs.find(s => normalized >= s.startAngle && normalized < s.endAngle)
+            || segs[segs.length - 1]
+
+          onSpinCompleteRef.current(wonSegment)
+        }
+      }
+
+      animFrameRef.current = requestAnimationFrame(animate)
     }
+
+    window.__spinWheel = startSpin
+
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
     }
-  }, [])
-
-  useEffect(() => {
-    drawWheel(rotationRef.current)
   }, [])
 
   return (
