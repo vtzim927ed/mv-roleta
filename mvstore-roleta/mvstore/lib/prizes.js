@@ -142,18 +142,17 @@ export function calculateSegments(prizes) {
 }
 
 export function getRotationForPrize(prize, segments, currentRotation) {
-  // Busca pelo sort_order para garantir que acha o segmento certo
   const segment = segments.find(s => s.sort_order === prize.sort_order)
     || segments.find(s => s.id === prize.id)
-  
+
   if (!segment) return currentRotation
 
   const targetAngle = segment.midAngle
   const minRotations = (5 + Math.random() * 3) * 360
   const currentPos = currentRotation % 360
-  let additionalRotation = (360 - targetAngle - currentPos + 360) % 360
 
-  if (additionalRotation < 30) additionalRotation += 360
+  let additionalRotation = (360 - targetAngle - currentPos % 360 + 360) % 360
+  if (additionalRotation < 45) additionalRotation += 360
 
   return currentRotation + minRotations + additionalRotation
 }
