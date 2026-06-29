@@ -22,6 +22,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notification, setNotification] = useState(null)
+  const lastPrizeRef = useRef(null)
 
   useEffect(() => {
     loadPrizes()
@@ -67,10 +68,8 @@ export default function Home() {
   async function handleSpin() {
     if (spinning || !client || client.spins_available <= 0) return
 
-    console.log('PRIZES:', prizes.map(p => ({ name: p.name, weight: p.weight })))
-
     const prize = spinWheel(prizes)
-    console.log('SORTEADO:', prize.name, 'weight:', prize.weight)
+    lastPrizeRef.current = prize
 
     if (window.__spinWheel) {
       window.__spinWheel(prize)
@@ -82,8 +81,9 @@ export default function Home() {
     } catch (e) {}
   }
 
-  async function handleSpinComplete(animPrize) {
-    const prize = animPrize
+  async function handleSpinComplete() {
+    const prize = lastPrizeRef.current
+    if (!prize) return
 
     try {
       await saveSpinResult(client.id, client.name, prize.id, prize.name)
