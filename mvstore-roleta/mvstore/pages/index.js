@@ -67,7 +67,10 @@ export default function Home() {
   async function handleSpin() {
     if (spinning || !client || client.spins_available <= 0) return
 
+    console.log('PRIZES:', prizes.map(p => ({ name: p.name, weight: p.weight })))
+
     const prize = spinWheel(prizes)
+    console.log('SORTEADO:', prize.name, 'weight:', prize.weight)
 
     if (window.__spinWheel) {
       window.__spinWheel(prize)
