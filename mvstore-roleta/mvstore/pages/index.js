@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 import dynamic from 'next/dynamic'
-import { Zap, Gift, ChevronRight, RotateCcw, History, X, AlertCircle } from 'lucide-react'
+import { Zap, ChevronRight, RotateCcw, History, X, AlertCircle } from 'lucide-react'
 import { getClientByCode, decrementSpin, saveSpinResult, getAllPrizes } from '../lib/supabase'
 import { DEFAULT_PRIZES, spinWheel } from '../lib/prizes'
 import PrizeModal from '../components/PrizeModal'
@@ -10,7 +10,7 @@ const SpinWheel = dynamic(() => import('../components/SpinWheel'), { ssr: false 
 const StarsBackground = dynamic(() => import('../components/StarsBackground'), { ssr: false })
 
 export default function Home() {
-  const [step, setStep] = useState('code') // code | wheel
+  const [step, setStep] = useState('code')
   const [code, setCode] = useState('')
   const [client, setClient] = useState(null)
   const [prizes, setPrizes] = useState(DEFAULT_PRIZES)
@@ -22,6 +22,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notification, setNotification] = useState(null)
+  const pendingPrizeRef = useRef(null)
 
   useEffect(() => {
     loadPrizes()
@@ -29,13 +30,9 @@ export default function Home() {
 
   async function loadPrizes() {
     try {
-      const { data, error } = await getAllPrizes()
-      if (data && data.length > 0) {
-        setPrizes(data)
-      }
-    } catch (e) {
-      // Use defaults
-    }
+      const { data } = await getAllPrizes()
+      if (data && data.length > 0) setPrizes(data)
+    } catch (e) {}
   }
 
   function showNotification(msg, type = 'success') {
@@ -48,7 +45,6 @@ export default function Home() {
     if (!code.trim()) return
     setLoading(true)
     setError('')
-
     try {
       const { data, error } = await getClientByCode(code)
       if (error || !data) {
@@ -73,19 +69,23 @@ export default function Home() {
     if (spinning || !client || client.spins_available <= 0) return
 
     const prize = spinWheel(prizes)
-    
-    // Trigger wheel animation
+    pendingPrizeRef.current = prize
+
     if (window.__spinWheel) {
       window.__spinWheel(prize)
     }
 
-    // Decrement spin immediately
     try {
       const { data: updatedClient } = await decrementSpin(client.id, client.spins_available)
       if (updatedClient) setClient(updatedClient)
     } catch (e) {}
+  }
 
-    // Save result
+  async function handleSpinComplete(animPrize) {
+    // Usa o prêmio sorteado (pendingPrizeRef) que foi passado para a animação
+    const prize = pendingPrizeRef.current || animPrize
+    pendingPrizeRef.current = null
+
     try {
       await saveSpinResult(client.id, client.name, prize.id, prize.name)
       setHistory(prev => [{
@@ -94,9 +94,7 @@ export default function Home() {
         spun_at: new Date().toISOString(),
       }, ...prev])
     } catch (e) {}
-  }
 
-  function handleSpinComplete(prize) {
     setWonPrize(prize)
     setShowModal(true)
   }
@@ -120,7 +118,6 @@ export default function Home() {
       <div className="relative min-h-screen cyber-grid-bg overflow-hidden" style={{ background: '#020B0F' }}>
         <StarsBackground />
 
-        {/* Notification */}
         {notification && (
           <div className={`notification fixed top-4 right-4 z-50 px-5 py-3 rounded-xl text-sm font-semibold shadow-lg ${
             notification.type === 'success'
@@ -132,7 +129,6 @@ export default function Home() {
         )}
 
         <div className="relative z-10 min-h-screen flex flex-col">
-          {/* Header */}
           <header className="px-4 py-4 flex items-center justify-between border-b border-cyan-400/10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -167,9 +163,7 @@ export default function Home() {
 
           <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-6">
             {step === 'code' ? (
-              // CODE ENTRY SCREEN
               <div className="w-full max-w-md">
-                {/* Hero */}
                 <div className="text-center mb-8">
                   <div className="text-6xl mb-4" style={{ animation: 'float 3s ease-in-out infinite', display: 'inline-block' }}>
                     🎰
@@ -177,12 +171,9 @@ export default function Home() {
                   <h1 className="text-3xl font-black mb-2" style={{ color: '#00F5FF' }}>
                     <span className="shimmer-text">Roleta de Prêmios</span>
                   </h1>
-                  <p className="text-white/50 text-sm">
-                    Insira seu código único para girar e ganhar!
-                  </p>
+                  <p className="text-white/50 text-sm">Insira seu código único para girar e ganhar!</p>
                 </div>
 
-                {/* Code form */}
                 <div className="prize-card rounded-2xl p-6">
                   <form onSubmit={handleCodeSubmit} className="space-y-4">
                     <div>
@@ -193,7 +184,7 @@ export default function Home() {
                         type="text"
                         value={code}
                         onChange={e => setCode(e.target.value.toUpperCase())}
-                        placeholder="Ex: MV123ABC"
+                        placeholder="Ex: MVABC"
                         className="input-cyber w-full px-4 py-3.5 text-lg font-mono tracking-widest text-center"
                         maxLength={20}
                         autoFocus
@@ -232,7 +223,6 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Preview prizes */}
                 <div className="mt-6">
                   <p className="text-center text-white/30 text-xs mb-3 uppercase tracking-widest">Prêmios disponíveis</p>
                   <div className="grid grid-cols-2 gap-2">
@@ -246,9 +236,7 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              // WHEEL SCREEN
               <div className="w-full max-w-lg flex flex-col items-center gap-4">
-                {/* Client info */}
                 <div className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-cyan-400/20" style={{ background: 'rgba(0,245,255,0.05)' }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
                     style={{ background: 'linear-gradient(135deg, #00F5FF, #0891B2)' }}>
@@ -267,7 +255,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Wheel */}
                 <div className="w-full flex items-center justify-center">
                   <SpinWheel
                     prizes={prizes}
@@ -278,7 +265,6 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Spin button */}
                 <button
                   onClick={handleSpin}
                   disabled={spinning || spinsLeft <= 0}
@@ -306,7 +292,6 @@ export default function Home() {
                   </p>
                 )}
 
-                {/* History panel */}
                 {showHistory && (
                   <div className="w-full prize-card rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -339,13 +324,11 @@ export default function Home() {
             )}
           </main>
 
-          {/* Footer */}
           <footer className="px-4 py-3 text-center border-t border-white/5">
             <p className="text-white/20 text-xs">© MV Store · Todos os direitos reservados</p>
           </footer>
         </div>
 
-        {/* Prize modal */}
         {showModal && wonPrize && (
           <PrizeModal
             prize={wonPrize}
